@@ -51,6 +51,9 @@ interface UpdateContentEvent {
 		allowMultipleAPIAcquire: boolean;
 		allowScripts: boolean;
 		allowForms: boolean;
+		sharedSessionCookies?: {
+			allowedOrigins: readonly string[];
+		};
 	};
 	state: any;
 	cspSource: string;

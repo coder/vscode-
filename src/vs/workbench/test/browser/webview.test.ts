@@ -6,6 +6,7 @@
 import assert from 'assert';
 import { parentOriginHash } from '../../../base/browser/iframe.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../base/test/common/utils.js';
+import { areWebviewContentOptionsEqual } from '../../contrib/webview/browser/webview.js';
 
 suite('parentOriginHash', () => {
 
@@ -25,4 +26,21 @@ suite('parentOriginHash', () => {
 	});
 
 	ensureNoDisposablesAreLeakedInTestSuite();
+});
+
+
+suite('areWebviewContentOptionsEqual', () => {
+	test('includes shared session cookies', () => {
+		assert.strictEqual(areWebviewContentOptionsEqual({
+			sharedSessionCookies: { allowedOrigins: ['https://example.com'] }
+		}, {
+			sharedSessionCookies: { allowedOrigins: ['https://example.com'] }
+		}), true);
+
+		assert.strictEqual(areWebviewContentOptionsEqual({
+			sharedSessionCookies: { allowedOrigins: ['https://example.com'] }
+		}, {
+			sharedSessionCookies: { allowedOrigins: ['https://example.org'] }
+		}), false);
+	});
 });

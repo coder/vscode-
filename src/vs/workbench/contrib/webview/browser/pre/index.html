@@ -461,6 +461,20 @@
 		/** @type {Array<{ readonly message: any, transfer?: ArrayBuffer[] }>} */
 		let pendingMessages = [];
 
+		/**
+		 * @param {{ allowedOrigins: readonly string[] } | undefined} sharedSessionCookies
+		 */
+		const updateSharedSessionCookies = (sharedSessionCookies) => {
+			if (!onElectron || disableServiceWorker || !navigator.serviceWorker.controller) {
+				return;
+			}
+
+			navigator.serviceWorker.controller.postMessage({
+				channel: 'set-shared-session-cookies',
+				data: sharedSessionCookies,
+			});
+		};
+
 		const initData = {
 			/** @type {number | undefined} */
 			initialScrollProgress: undefined,
@@ -1001,6 +1015,7 @@
 				}
 
 				const options = data.options;
+				updateSharedSessionCookies(options.sharedSessionCookies);
 				const newDocument = toContentHtml(data);
 
 				const initialStyleVersion = styleVersion;

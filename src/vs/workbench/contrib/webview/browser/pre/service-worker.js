@@ -121,6 +121,13 @@ const resourceRequestStore = new RequestStore();
 /** @type {RequestStore<string|undefined>} */
 const localhostRequestStore = new RequestStore();
 
+/**
+ * Allow this webview to send Electron session cookies to trusted origins.
+ *
+ * @type {{ readonly allowedOrigins: readonly string[] } | undefined}
+ */
+let sharedSessionCookies;
+
 const unauthorized = () =>
 	new Response('Unauthorized', { status: 401, });
 
@@ -168,6 +175,10 @@ sw.addEventListener('message', async (event) => {
 			if (!localhostRequestStore.resolve(data.id, data.location)) {
 				console.log('Could not resolve unknown localhost', data.origin);
 			}
+			return;
+		}
+		case 'set-shared-session-cookies': {
+			sharedSessionCookies = event.data.data;
 			return;
 		}
 		default: {
@@ -220,6 +231,10 @@ sw.addEventListener('fetch', (event) => {
 		}
 	}
 
+	if (shouldUseSharedSessionCookies(requestUrl)) {
+		return event.respondWith(fetch(createSharedSessionCookieRequest(event.request)));
+	}
+
 	// See if it's a localhost request
 	if (requestUrl.origin !== sw.origin && requestUrl.host.match(/^(localhost|127.0.0.1|0.0.0.0):(\d+)$/)) {
 		return event.respondWith(processLocalhostRequest(event, requestUrl));
@@ -234,6 +249,19 @@ sw.addEventListener('activate', (event) => {
 	event.waitUntil(sw.clients.claim()); // Become available to all pages
 });
 
+function shouldUseSharedSessionCookies(requestUrl) {
+	return requestUrl.origin !== sw.origin
+		&& !!sharedSessionCookies
+		&& sharedSessionCookies.allowedOrigins.includes(requestUrl.origin);
+}
+
+/**
+ * @param {Request} request
+ * @returns {Request}
+ */
+function createSharedSessionCookieRequest(request) {
+	return new Request(request, { credentials: 'include' });
+}
 
 /**
  * @typedef {Object} ResourceRequestUrlComponents

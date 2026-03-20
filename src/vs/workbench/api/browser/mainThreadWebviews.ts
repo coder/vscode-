@@ -14,6 +14,7 @@ import { ExtensionIdentifier } from '../../../platform/extensions/common/extensi
 import { IOpenerService } from '../../../platform/opener/common/opener.js';
 import { IProductService } from '../../../platform/product/common/productService.js';
 import { IWebview, WebviewContentOptions, WebviewExtensionDescription } from '../../contrib/webview/browser/webview.js';
+import { normalizeSharedSessionCookies } from '../../contrib/webview/common/webviewSharedSessionCookies.js';
 import { IExtHostContext } from '../../services/extensions/common/extHostCustomers.js';
 import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
 import * as extHostProtocol from '../common/extHost.protocol.js';
@@ -155,5 +156,6 @@ export function reviveWebviewContentOptions(webviewOptions: extHostProtocol.IWeb
 		enableCommandUris: webviewOptions.enableCommandUris,
 		localResourceRoots: Array.isArray(webviewOptions.localResourceRoots) ? webviewOptions.localResourceRoots.map(r => URI.revive(r)) : undefined,
 		portMapping: webviewOptions.portMapping,
+		sharedSessionCookies: normalizeSharedSessionCookies(webviewOptions.sharedSessionCookies, { platform: isWeb ? 'browser' : 'electron' }),
 	};
 }

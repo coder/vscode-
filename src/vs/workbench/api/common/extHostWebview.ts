@@ -10,12 +10,14 @@ import { Schemas } from '../../../base/common/network.js';
 import * as objects from '../../../base/common/objects.js';
 import { URI } from '../../../base/common/uri.js';
 import { normalizeVersion, parseVersion } from '../../../platform/extensions/common/extensionValidator.js';
+import { isWeb } from '../../../base/common/platform.js';
 import { IExtensionDescription } from '../../../platform/extensions/common/extensions.js';
 import { ILogService } from '../../../platform/log/common/log.js';
 import { IExtHostApiDeprecationService } from './extHostApiDeprecationService.js';
 import { deserializeWebviewMessage, serializeWebviewMessage } from './extHostWebviewMessaging.js';
 import { IExtHostWorkspace } from './extHostWorkspace.js';
 import { WebviewRemoteInfo, asWebviewUri, webviewGenericCspSource } from '../../contrib/webview/common/webview.js';
+import { normalizeSharedSessionCookies } from '../../contrib/webview/common/webviewSharedSessionCookies.js';
 import { SerializableObjectWithBuffers } from '../../services/extensions/common/proxyIdentifier.js';
 import type * as vscode from 'vscode';
 import * as extHostProtocol from './extHost.protocol.js';
@@ -269,7 +271,8 @@ export function serializeWebviewOptions(
 		enableScripts: options.enableScripts,
 		enableForms: options.enableForms,
 		portMapping: options.portMapping,
-		localResourceRoots: options.localResourceRoots || getDefaultLocalResourceRoots(extension, workspace)
+		localResourceRoots: options.localResourceRoots || getDefaultLocalResourceRoots(extension, workspace),
+		sharedSessionCookies: normalizeSharedSessionCookies(options.sharedSessionCookies, { platform: isWeb ? 'browser' : 'electron' }),
 	};
 }
 
@@ -280,6 +283,7 @@ function reviveOptions(options: extHostProtocol.IWebviewContentOptions): vscode.
 		enableForms: options.enableForms,
 		portMapping: options.portMapping,
 		localResourceRoots: options.localResourceRoots?.map(components => URI.from(components)),
+		sharedSessionCookies: normalizeSharedSessionCookies(options.sharedSessionCookies, { platform: isWeb ? 'browser' : 'electron' }),
 	};
 }
 
