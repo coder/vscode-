@@ -1007,12 +1007,17 @@ export interface IWebviewPortMapping {
 	readonly extensionHostPort: number;
 }
 
+export interface IWebviewSharedSessionCookies {
+	readonly allowedOrigins: readonly string[];
+}
+
 export interface IWebviewContentOptions {
 	readonly enableScripts?: boolean;
 	readonly enableForms?: boolean;
 	readonly enableCommandUris?: boolean | readonly string[];
 	readonly localResourceRoots?: readonly UriComponents[];
 	readonly portMapping?: readonly IWebviewPortMapping[];
+	readonly sharedSessionCookies?: IWebviewSharedSessionCookies;
 }
 
 export interface IWebviewPanelOptions {

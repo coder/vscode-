@@ -668,6 +668,7 @@ export class WebviewElement extends Disposable implements IWebviewElement, Webvi
 				allowMultipleAPIAcquire: !!this._content.options.allowMultipleAPIAcquire,
 				allowScripts: allowScripts,
 				allowForms: this._content.options.allowForms ?? allowScripts, // For back compat, we allow forms by default when scripts are enabled
+				sharedSessionCookies: this.platform === 'electron' ? this._content.options.sharedSessionCookies : undefined,
 			},
 			state: this._content.state,
 			cspSource: webviewGenericCspSource,

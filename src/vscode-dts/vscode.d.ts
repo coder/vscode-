@@ -9942,6 +9942,24 @@ declare module 'vscode' {
 		 * cannot be mapped to another port.
 		 */
 		readonly portMapping?: readonly WebviewPortMapping[];
+
+		/**
+		 * Allow this desktop webview to send VS Code's existing Electron session cookies to a list of trusted origins.
+		 *
+		 * This setting is ignored in web/browser environments.
+		 *
+		 * Only the exact origins in {@link WebviewOptions.sharedSessionCookies.allowedOrigins allowedOrigins} are eligible.
+		 * Cookie values remain inaccessible to webview JavaScript, including `document.cookie`.
+		 */
+		readonly sharedSessionCookies?: {
+			/**
+			 * Trusted origins that may receive the current Electron session cookies.
+			 *
+			 * Each entry must be an absolute origin such as `https://example.com`.
+			 * Non-HTTPS origins are only supported for localhost development origins.
+			 */
+			readonly allowedOrigins: readonly string[];
+		};
 	}
 
 	/**

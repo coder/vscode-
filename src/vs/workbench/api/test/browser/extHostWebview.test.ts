@@ -16,6 +16,7 @@ import { NullApiDeprecationService } from '../../common/extHostApiDeprecationSer
 import { IExtHostRpcService } from '../../common/extHostRpcService.js';
 import { ExtHostWebviews } from '../../common/extHostWebview.js';
 import { ExtHostWebviewPanels } from '../../common/extHostWebviewPanels.js';
+import * as extHostProtocol from '../../common/extHost.protocol.js';
 import { SingleProxyRPCProtocol } from '../common/testRPCProtocol.js';
 import { decodeAuthority, webviewResourceBaseHost } from '../../../contrib/webview/common/webview.js';
 import { EditorGroupColumn } from '../../../services/editor/common/editorGroupColumn.js';
@@ -25,12 +26,13 @@ import type * as vscode from 'vscode';
 suite('ExtHostWebview', () => {
 	let disposables: DisposableStore;
 	let rpcProtocol: (IExtHostRpcService & IExtHostContext) | undefined;
+	let mainThreadWebviews: ReturnType<typeof createNoopMainThreadWebviews>;
 
 	setup(() => {
 		disposables = new DisposableStore();
 
-		const shape = createNoopMainThreadWebviews();
-		rpcProtocol = SingleProxyRPCProtocol(shape);
+		mainThreadWebviews = createNoopMainThreadWebviews();
+		rpcProtocol = SingleProxyRPCProtocol(mainThreadWebviews);
 	});
 
 	teardown(() => {
@@ -195,13 +197,65 @@ suite('ExtHostWebview', () => {
 			'Check decoded authority'
 		);
 	});
+
+	test('serializes shared session cookies on webview creation', () => {
+		const extHostWebviews = disposables.add(new ExtHostWebviews(rpcProtocol!, { authority: undefined, isRemote: false }, undefined, new NullLogService(), NullApiDeprecationService));
+		const extHostWebviewPanels = disposables.add(new ExtHostWebviewPanels(rpcProtocol!, extHostWebviews, undefined));
+
+		const panel = disposables.add(extHostWebviewPanels.createWebviewPanel({
+			extensionLocation: URI.file('/ext/path')
+		} as IExtensionDescription, 'type', 'title', 1, {
+			sharedSessionCookies: {
+				allowedOrigins: ['https://Example.com', 'https://example.com/']
+			}
+		}));
+
+		assert.deepStrictEqual(mainThreadWebviews.lastCreateWebviewOptions?.sharedSessionCookies, {
+			allowedOrigins: ['https://example.com']
+		});
+		assert.deepStrictEqual(panel.webview.options.sharedSessionCookies, {
+			allowedOrigins: ['https://Example.com', 'https://example.com/']
+		});
+	});
+
+	test('serializes shared session cookies on webview option updates', () => {
+		const panel = createWebview(rpcProtocol, undefined);
+
+		panel.webview.options = {
+			...panel.webview.options,
+			sharedSessionCookies: {
+				allowedOrigins: ['https://Example.com', 'https://example.com/']
+			}
+		};
+
+		assert.deepStrictEqual(mainThreadWebviews.lastSetOptions?.sharedSessionCookies, {
+			allowedOrigins: ['https://example.com']
+		});
+	});
+
+	test('does not serialize shared session cookies by default', () => {
+		createWebview(rpcProtocol, undefined);
+
+		assert.strictEqual(mainThreadWebviews.lastCreateWebviewOptions?.sharedSessionCookies, undefined);
+	});
 });
 
 
 function createNoopMainThreadWebviews() {
 	return new class extends mock<MainThreadWebviewManager>() {
+		lastCreateWebviewOptions: extHostProtocol.IWebviewContentOptions | undefined;
+		lastSetOptions: extHostProtocol.IWebviewContentOptions | undefined;
+
 		$disposeWebview() { /* noop */ }
-		$createWebviewPanel() { /* noop */ }
+
+		$createWebviewPanel(_extensionData: unknown, _handle: string, _viewType: string, initData: { webviewOptions: extHostProtocol.IWebviewContentOptions }) {
+			this.lastCreateWebviewOptions = initData.webviewOptions;
+		}
+
+		$setOptions(_handle: string, options: extHostProtocol.IWebviewContentOptions) {
+			this.lastSetOptions = options;
+		}
+
 		$registerSerializer() { /* noop */ }
 		$unregisterSerializer() { /* noop */ }
 	};

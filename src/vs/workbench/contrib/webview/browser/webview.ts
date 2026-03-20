@@ -19,6 +19,7 @@ import { createDecorator } from '../../../../platform/instantiation/common/insta
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IWebviewPortMapping } from '../../../../platform/webview/common/webviewPortMapping.js';
 import { Memento } from '../../../common/memento.js';
+import { areSharedSessionCookiesEqual, IWebviewSharedSessionCookies } from '../common/webviewSharedSessionCookies.js';
 
 /**
  * Set when the find widget in a webview in a webview is visible.
@@ -135,6 +136,11 @@ export interface WebviewContentOptions {
 	readonly portMapping?: readonly IWebviewPortMapping[];
 
 	/**
+	 * Allow this desktop webview to send the current Electron session cookies to a set of trusted origins.
+	 */
+	readonly sharedSessionCookies?: IWebviewSharedSessionCookies;
+
+	/**
 	 * Are command uris enabled in the webview? Defaults to false.
 	 *
 	 * TODO: This is only supported by mainThreadWebviews and should be removed from here.
@@ -152,6 +158,7 @@ export function areWebviewContentOptionsEqual(a: WebviewContentOptions, b: Webvi
 		&& a.allowForms === b.allowForms
 		&& equals(a.localResourceRoots, b.localResourceRoots, isEqual)
 		&& equals(a.portMapping, b.portMapping, (a, b) => a.extensionHostPort === b.extensionHostPort && a.webviewPort === b.webviewPort)
+		&& areSharedSessionCookiesEqual(a.sharedSessionCookies, b.sharedSessionCookies)
 		&& areEnableCommandUrisEqual(a, b)
 	);
 }
